@@ -4,7 +4,7 @@
 
   <title>Expense Tracker Dashboard</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
 
@@ -189,8 +189,8 @@ const supabaseKey =
 
 const client =
 supabase.createClient(
-supabaseUrl,
-supabaseKey
+  supabaseUrl,
+  supabaseKey
 );
 
 let currentUser;
@@ -214,23 +214,34 @@ async function getUser(){
 
     document.getElementById("welcome")
     .innerHTML =
-    "Welcome Expense Tracker";
+    `Welcome ${user.email}`;
 
+    await loadExpenses();
 }
 
 async function saveExpense(){
 
     let description =
-    document.getElementById("description").value;
+    document.getElementById("description").value.trim();
 
     let amount =
     document.getElementById("amount").value;
 
     let category =
-    document.getElementById("category").value;
+    document.getElementById("category").value.trim();
 
     let expense_date =
     document.getElementById("expense_date").value;
+
+    if(
+      !description ||
+      !amount ||
+      !category ||
+      !expense_date
+    ){
+      alert("Please fill all fields");
+      return;
+    }
 
     if(editId == null){
 
@@ -240,10 +251,10 @@ async function saveExpense(){
         .insert([
           {
             user_id: currentUser.id,
-            description: description,
-            amount: amount,
-            category: category,
-            expense_date: expense_date
+            description,
+            amount,
+            category,
+            expense_date
           }
         ]);
 
@@ -265,12 +276,13 @@ async function saveExpense(){
         await client
         .from("expenses")
         .update({
-            description: description,
-            amount: amount,
-            category: category,
-            expense_date: expense_date
+            description,
+            amount,
+            category,
+            expense_date
         })
-        .eq("id", editId);
+        .eq("id", editId)
+        .eq("user_id", currentUser.id);
 
         if(error){
 
@@ -296,7 +308,9 @@ async function loadExpenses(){
     const { data, error } =
     await client
     .from("expenses")
-    .select("*");
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .order("id", { ascending:false });
 
     if(error){
 
@@ -337,13 +351,7 @@ async function loadExpenses(){
 
                   <button
                   class="edit-btn"
-                  onclick="editExpense(
-                  ${expense.id},
-                  '${expense.description}',
-                  '${expense.amount}',
-                  '${expense.category}',
-                  '${expense.expense_date}'
-                  )">
+                  onclick='editExpense(${JSON.stringify(expense)})'>
 
                   Edit
 
@@ -374,40 +382,42 @@ async function loadExpenses(){
     }
 }
 
-function editExpense(
-id,
-description,
-amount,
-category,
-expense_date
-){
+function editExpense(expense){
 
-    editId = id;
+    editId = expense.id;
 
     document.getElementById(
     "description"
-    ).value = description;
+    ).value = expense.description;
 
     document.getElementById(
     "amount"
-    ).value = amount;
+    ).value = expense.amount;
 
     document.getElementById(
     "category"
-    ).value = category;
+    ).value = expense.category;
 
     document.getElementById(
     "expense_date"
-    ).value = expense_date;
+    ).value = expense.expense_date;
 }
 
 async function deleteExpense(id){
+
+    let confirmDelete =
+    confirm("Are you sure?");
+
+    if(!confirmDelete){
+      return;
+    }
 
     const { error } =
     await client
     .from("expenses")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", currentUser.id);
 
     if(error){
 
@@ -451,8 +461,6 @@ async function logout(){
 }
 
 getUser();
-
-loadExpenses();
 
 </script>
 
