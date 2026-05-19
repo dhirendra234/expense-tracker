@@ -4,41 +4,143 @@
 
   <title>Signup</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:Arial, sans-serif;
+    }
+
+    body{
+      height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      background:linear-gradient(135deg,#667eea,#764ba2);
+    }
+
+    .signup-box{
+      width:380px;
+      background:white;
+      padding:40px;
+      border-radius:18px;
+      box-shadow:0px 10px 30px rgba(0,0,0,0.2);
+      text-align:center;
+    }
+
+    .signup-box h2{
+      margin-bottom:25px;
+      color:#333;
+      font-size:28px;
+    }
+
+    .input-box{
+      margin-bottom:20px;
+    }
+
+    .input-box input,
+    .input-box select{
+      width:100%;
+      padding:14px;
+      border:1px solid #ccc;
+      border-radius:10px;
+      outline:none;
+      font-size:16px;
+      transition:0.3s;
+    }
+
+    .input-box input:focus,
+    .input-box select:focus{
+      border-color:#667eea;
+      box-shadow:0px 0px 8px rgba(102,126,234,0.5);
+    }
+
+    .signup-btn{
+      width:100%;
+      padding:14px;
+      border:none;
+      border-radius:10px;
+      background:linear-gradient(135deg,#667eea,#764ba2);
+      color:white;
+      font-size:17px;
+      font-weight:bold;
+      cursor:pointer;
+      transition:0.3s;
+    }
+
+    .signup-btn:hover{
+      transform:translateY(-3px);
+      box-shadow:0px 8px 18px rgba(0,0,0,0.2);
+      background:linear-gradient(135deg,#764ba2,#667eea);
+    }
+
+    .footer-text{
+      margin-top:18px;
+      color:#666;
+      font-size:14px;
+    }
+
+  </style>
 
 </head>
 
 <body>
 
-<h2>Signup</h2>
+<div class="signup-box">
 
-<input type="email" id="email" placeholder="Enter Email">
+  <h2>Create Account</h2>
 
-<br><br>
+  <div class="input-box">
+    <input type="email"
+    id="email"
+    placeholder="Enter Email">
+  </div>
 
-<input type="password" id="password" placeholder="Enter Password">
+  <div class="input-box">
+    <input type="password"
+    id="password"
+    placeholder="Enter Password">
+  </div>
 
-<br><br>
+  <div class="input-box">
+    <select id="userType">
 
-<select id="userType">
+      <option value="student">
+        Student
+      </option>
 
-  <option value="student">Student</option>
+      <option value="salaried">
+        Salaried
+      </option>
 
-  <option value="salaried">Salaried</option>
+    </select>
+  </div>
 
-</select>
+  <button class="signup-btn"
+  onclick="signup()">
+    Signup
+  </button>
 
-<br><br>
+  <div class="footer-text">
+    Welcome To Expense Tracker 🚀
+  </div>
 
-<button onclick="signup()">Signup</button>
+</div>
 
 <script>
 
-const supabaseUrl = "https://xiixbuviocucvyoeclfm.supabase.co";
+const supabaseUrl =
+"https://xiixbuviocucvyoeclfm.supabase.co";
 
-const supabaseKey = "sb_publishable_WANF1cnsNAF9XcO9VbZe7Q_XhCgWqit";
+const supabaseKey =
+"sb_publishable_WANF1cnsNAF9XcO9VbZe7Q_XhCgWqit";
 
-const client = supabase.createClient(
+const client =
+supabase.createClient(
 supabaseUrl,
 supabaseKey
 );
@@ -46,13 +148,27 @@ supabaseKey
 async function signup(){
 
     let email =
-    document.getElementById("email").value;
+    document.getElementById("email").value.trim();
 
     let password =
-    document.getElementById("password").value;
+    document.getElementById("password").value.trim();
 
     let userType =
     document.getElementById("userType").value;
+
+    if(!email || !password){
+
+        alert("Please fill all fields");
+
+        return;
+    }
+
+    if(password.length < 6){
+
+        alert("Password must be at least 6 characters");
+
+        return;
+    }
 
     const { data, error } =
     await client.auth.signUp({
@@ -72,6 +188,7 @@ async function signup(){
 
         let userId = data.user.id;
 
+        const { error: profileError } =
         await client
         .from("profiles")
         .insert([
@@ -81,9 +198,17 @@ async function signup(){
           }
         ]);
 
+        if(profileError){
+
+            alert(profileError.message);
+
+            return;
+        }
+
         alert("Signup Successful");
 
-        window.location.href = "login.html";
+        window.location.href =
+        "login.html";
     }
 }
 
