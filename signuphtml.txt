@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <title>Signup</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+</head>
+
+<body>
+
+<h2>Signup</h2>
+
+<input type="email" id="email" placeholder="Enter Email">
+
+<br><br>
+
+<input type="password" id="password" placeholder="Enter Password">
+
+<br><br>
+
+<select id="userType">
+
+  <option value="student">Student</option>
+
+  <option value="salaried">Salaried</option>
+
+</select>
+
+<br><br>
+
+<button onclick="signup()">Signup</button>
+
+<script>
+
+const supabaseUrl = "YOUR_SUPABASE_URL";
+
+const supabaseKey = "YOUR_SUPABASE_ANON_KEY";
+
+const client = supabase.createClient(
+supabaseUrl,
+supabaseKey
+);
+
+async function signup(){
+
+    let email =
+    document.getElementById("email").value;
+
+    let password =
+    document.getElementById("password").value;
+
+    let userType =
+    document.getElementById("userType").value;
+
+    const { data, error } =
+    await client.auth.signUp({
+
+        email: email,
+        password: password
+
+    });
+
+    if(error){
+
+        alert(error.message);
+
+    }
+
+    else{
+
+        let userId = data.user.id;
+
+        await client
+        .from("profiles")
+        .insert([
+          {
+            id: userId,
+            user_type: userType
+          }
+        ]);
+
+        alert("Signup Successful");
+
+        window.location.href = "login.html";
+    }
+}
+
+</script>
+
+</body>
+</html>
