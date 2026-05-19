@@ -2,65 +2,199 @@
 <html>
 <head>
 
-  <title>Dashboard</title>
+  <title>Expense Tracker Dashboard</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <style>
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:Arial;
+    }
+
+    body{
+      background:#f4f7fc;
+      padding:30px;
+    }
+
+    .container{
+      max-width:1100px;
+      margin:auto;
+      background:white;
+      padding:25px;
+      border-radius:15px;
+      box-shadow:0px 0px 10px rgba(0,0,0,0.1);
+    }
+
+    h1{
+      margin-bottom:20px;
+      color:#333;
+    }
+
+    .form-group{
+      margin-bottom:15px;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      border:1px solid #ccc;
+      border-radius:8px;
+      font-size:16px;
+    }
+
+    button{
+      padding:10px 20px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:15px;
+    }
+
+    .save-btn{
+      background:#007bff;
+      color:white;
+    }
+
+    .logout-btn{
+      background:red;
+      color:white;
+      float:right;
+    }
+
+    .edit-btn{
+      background:orange;
+      color:white;
+    }
+
+    .delete-btn{
+      background:red;
+      color:white;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:25px;
+    }
+
+    table th{
+      background:#007bff;
+      color:white;
+      padding:12px;
+    }
+
+    table td{
+      padding:12px;
+      border:1px solid #ddd;
+      text-align:center;
+    }
+
+    tr:nth-child(even){
+      background:#f2f2f2;
+    }
+
+    .total-box{
+      margin-top:20px;
+      padding:15px;
+      background:#e8f0ff;
+      border-radius:10px;
+      font-size:20px;
+      font-weight:bold;
+    }
+
+  </style>
 
 </head>
 
 <body>
 
-<h1 id="welcome"></h1>
+<div class="container">
 
-<hr>
+    <button class="logout-btn" onclick="logout()">
+      Logout
+    </button>
 
-<h2>Add Expense</h2>
+    <h1 id="welcome"></h1>
 
-<input type="text"
-id="description"
-placeholder="Description">
+    <div class="form-group">
+      <input type="text"
+      id="description"
+      placeholder="Enter Description">
+    </div>
 
-<br><br>
+    <div class="form-group">
+      <input type="number"
+      id="amount"
+      placeholder="Enter Amount">
+    </div>
 
-<input type="number"
-id="amount"
-placeholder="Amount">
+    <div class="form-group">
+      <input type="text"
+      id="category"
+      placeholder="Enter Category">
+    </div>
 
-<br><br>
+    <div class="form-group">
+      <input type="date"
+      id="expense_date">
+    </div>
 
-<input type="text"
-id="category"
-placeholder="Category">
+    <button class="save-btn"
+    onclick="saveExpense()">
+      Save Expense
+    </button>
 
-<br><br>
+    <div class="total-box">
+      Total Expense: ₹
+      <span id="totalExpense">0</span>
+    </div>
 
-<input type="date"
-id="expense_date">
+    <table>
 
-<br><br>
+      <thead>
 
-<button onclick="saveExpense()">
-Save Expense
-</button>
+        <tr>
 
-<br><br>
+          <th>ID</th>
+          <th>Description</th>
+          <th>Amount</th>
+          <th>Category</th>
+          <th>Date</th>
+          <th>Edit</th>
+          <th>Delete</th>
 
-<button onclick="logout()">
-Logout
-</button>
+        </tr>
+
+      </thead>
+
+      <tbody id="expenseTableBody">
+
+      </tbody>
+
+    </table>
+
+</div>
 
 <script>
 
-const supabaseUrl = "https://xiixbuviocucvyoeclfm.supabase.co";
+const supabaseUrl =
+"https://xiixbuviocucvyoeclfm.supabase.co";
 
-const supabaseKey = "sb_publishable_WANF1cnsNAF9XcO9VbZe7Q_XhCgWqit";
+const supabaseKey =
+"sb_publishable_WANF1cnsNAF9XcO9VbZe7Q_XhCgWqit";
 
-const client = supabase.createClient(
+const client =
+supabase.createClient(
 supabaseUrl,
 supabaseKey
 );
 
 let currentUser;
+let editId = null;
 
 async function getUser(){
 
@@ -78,27 +212,10 @@ async function getUser(){
 
     currentUser = user;
 
-    const { data, error } =
-    await client
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+    document.getElementById("welcome")
+    .innerHTML =
+    "Welcome Expense Tracker";
 
-    if(data.user_type=="student"){
-
-        document.getElementById("welcome")
-        .innerHTML =
-        "Welcome Student";
-
-    }
-
-    else{
-
-        document.getElementById("welcome")
-        .innerHTML =
-        "Welcome Salaried User";
-    }
 }
 
 async function saveExpense(){
@@ -115,29 +232,214 @@ async function saveExpense(){
     let expense_date =
     document.getElementById("expense_date").value;
 
-    const { error } =
+    if(editId == null){
+
+        const { error } =
+        await client
+        .from("expenses")
+        .insert([
+          {
+            user_id: currentUser.id,
+            description: description,
+            amount: amount,
+            category: category,
+            expense_date: expense_date
+          }
+        ]);
+
+        if(error){
+
+            alert(error.message);
+
+        }
+
+        else{
+
+            alert("Expense Saved");
+        }
+    }
+
+    else{
+
+        const { error } =
+        await client
+        .from("expenses")
+        .update({
+            description: description,
+            amount: amount,
+            category: category,
+            expense_date: expense_date
+        })
+        .eq("id", editId);
+
+        if(error){
+
+            alert(error.message);
+
+        }
+
+        else{
+
+            alert("Expense Updated");
+
+            editId = null;
+        }
+    }
+
+    clearForm();
+
+    loadExpenses();
+}
+
+async function loadExpenses(){
+
+    const { data, error } =
     await client
     .from("expenses")
-    .insert([
-      {
-        user_id: currentUser.id,
-        description: description,
-        amount: amount,
-        category: category,
-        expense_date: expense_date
-      }
-    ]);
+    .select("*");
 
     if(error){
 
-        alert("Error Saving Expense");
+        console.log(error);
 
     }
 
     else{
 
-        alert("Expense Saved");
+        let table =
+        document.getElementById(
+        "expenseTableBody"
+        );
+
+        table.innerHTML = "";
+
+        let total = 0;
+
+        data.forEach(expense => {
+
+            total += Number(expense.amount);
+
+            table.innerHTML += `
+
+            <tr>
+
+                <td>${expense.id}</td>
+
+                <td>${expense.description}</td>
+
+                <td>₹${expense.amount}</td>
+
+                <td>${expense.category}</td>
+
+                <td>${expense.expense_date}</td>
+
+                <td>
+
+                  <button
+                  class="edit-btn"
+                  onclick="editExpense(
+                  ${expense.id},
+                  '${expense.description}',
+                  '${expense.amount}',
+                  '${expense.category}',
+                  '${expense.expense_date}'
+                  )">
+
+                  Edit
+
+                  </button>
+
+                </td>
+
+                <td>
+
+                  <button
+                  class="delete-btn"
+                  onclick="deleteExpense(${expense.id})">
+
+                  Delete
+
+                  </button>
+
+                </td>
+
+            </tr>
+
+            `;
+        });
+
+        document.getElementById(
+        "totalExpense"
+        ).innerHTML = total;
     }
+}
+
+function editExpense(
+id,
+description,
+amount,
+category,
+expense_date
+){
+
+    editId = id;
+
+    document.getElementById(
+    "description"
+    ).value = description;
+
+    document.getElementById(
+    "amount"
+    ).value = amount;
+
+    document.getElementById(
+    "category"
+    ).value = category;
+
+    document.getElementById(
+    "expense_date"
+    ).value = expense_date;
+}
+
+async function deleteExpense(id){
+
+    const { error } =
+    await client
+    .from("expenses")
+    .delete()
+    .eq("id", id);
+
+    if(error){
+
+        alert(error.message);
+
+    }
+
+    else{
+
+        alert("Expense Deleted");
+
+        loadExpenses();
+    }
+}
+
+function clearForm(){
+
+    document.getElementById(
+    "description"
+    ).value = "";
+
+    document.getElementById(
+    "amount"
+    ).value = "";
+
+    document.getElementById(
+    "category"
+    ).value = "";
+
+    document.getElementById(
+    "expense_date"
+    ).value = "";
 }
 
 async function logout(){
@@ -149,6 +451,8 @@ async function logout(){
 }
 
 getUser();
+
+loadExpenses();
 
 </script>
 
